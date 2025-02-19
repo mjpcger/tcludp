@@ -109,6 +109,6 @@ typedef struct UdpState {
 
 
 EXTERN int Udp_Init(Tcl_Interp *interp);
-EXTERN int Udp_SafeInit(Tcl_Interp *interp);
+EXTERN int Udp_Unload(Tcl_Interp *interp, int flag);
 
 #endif

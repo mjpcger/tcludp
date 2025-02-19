@@ -162,13 +162,19 @@ static Tcl_ChannelType Udp_ChannelType = {
     udpGetHandle,          /* Get OS handle from the channel.               */
 };
 
+#ifdef USE_TCL_STUBS
+	const TclStubs *tclStubsPtr = NULL;
+#else
+	static TclStubs *tclStubsPtr = NULL; 
+#endif
+
 /*
  * ----------------------------------------------------------------------
  * udpInit
  * ----------------------------------------------------------------------
  */
 int
-Udp_Init(Tcl_Interp *interp)
+DLLEXPORT Udp_Init(Tcl_Interp *interp)
 {
     int r = TCL_OK;
 #if defined(DEBUG) && !defined(WIN32)
@@ -176,16 +182,26 @@ Udp_Init(Tcl_Interp *interp)
 #endif
 
 #ifdef USE_TCL_STUBS
-    Tcl_InitStubs(interp, "8.1", 0);
+	struct HeadOfInterp {
+		Tcl_Interp interpWithStubTable;
+		TclStubs *stubTable;
+	} *hoi = (struct HeadOfInterp*) interp;
+	if (hoi->stubTable == NULL || hoi->stubTable->magic != TCL_STUB_MAGIC) {
+		static char result[] = "This extension requires Tcl stubs support.";
+		Tcl_SetResult(interp, result, TCL_STATIC);
+		return 0;
+	}
+	tclStubsPtr = hoi->stubTable;
 #endif
 
 #ifdef WIN32
     if (Udp_WinHasSockets(interp) != TCL_OK) {
+		tclStubsPtr = NULL;
         return TCL_ERROR;
     }
     Tcl_CreateEventSource(UDP_SetupProc, UDP_CheckProc, NULL);
 #endif
-
+ 
     Tcl_CreateCommand(interp, "udp_open", udpOpen , 
                       (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "udp_conf", udpConf , 
@@ -193,14 +209,17 @@ Udp_Init(Tcl_Interp *interp)
     Tcl_CreateCommand(interp, "udp_peek", udpPeek , 
                       (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
     
-    r = Tcl_PkgProvide(interp, PACKAGE_NAME, PACKAGE_VERSION);
+    if (!(r = Tcl_PkgProvide(interp, "udp","2.0")))
+		tclStubsPtr = NULL;
     return r;
 }
 
 int
-Udp_SafeInit(Tcl_Interp *interp)
+Udp_Unload(Tcl_Interp *interp, int flags)
 {
-    Tcl_SetResult(interp, "permission denied", TCL_STATIC);
+    Tcl_DeleteCommand(interp, "udp_open");
+    Tcl_DeleteCommand(interp, "udp_conf");
+    Tcl_DeleteCommand(interp, "udp_peek");
     return TCL_ERROR;
 }
 
@@ -636,12 +655,14 @@ UDP_CheckProc(ClientData data, int flags)
 				 * not work correctly in case of multithreaded. Also inet_ntop() is
 				 * not available in older windows versions.
 				 */
+				DWORD remlen = remoteaddrlen; 
 				if (WSAAddressToString((struct sockaddr *)&recvaddr,socksize,
-					NULL,remoteaddr,&remoteaddrlen)==0) {
+					NULL,remoteaddr,&remlen)==0) {
 					/* 
 					 * We now have an address in the format of <ip address>:<port> 
 					 * Search backwards for the last ':'
 					 */
+					 remoteaddrlen = (int)remlen;
 					portaddr = strrchr(remoteaddr,':') + 1;
 					strncpy(hostaddr,remoteaddr,strlen(remoteaddr)-strlen(portaddr)-1);
 					statePtr->peerport = atoi(portaddr);

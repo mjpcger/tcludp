@@ -6,65 +6,38 @@ This package provides UDP sockets for Tcl.
 INSTALLATION
 ============
 
-This package uses the Tcl Extension Architecture (TEA). Please see the
-web page
+This Project, forked from the original one on github.com/mpcjanssen/tcludp.
+Depending on the Architecture of the tcl shell you want to use, copy
+either the dll from Folder Release32 (for 32-bit shell) or Folder Release64
+(for 64-bit shell) to the Folder of your tcl scripts. Load the Extension
+with
+	load [glob udp*.dll]
 
-    http://www.tcl.tk/doc/tea/
-
-for more information about TEA.
 
 UNIX BUILD
 ==========
 
-Building under most UNIX systems is easy, just run the configure script
-and then run make. For more information about the build process, see
-the tcl/unix/README file in the Tcl src dist. The following minimal
-example will install the extension in the /opt/tcl directory.
-
-The tcl development package is required for building. 
-(e.g. use 'apt-get|yum install tcl-devel.<platform>'
-
-	$ cd tcludp
-	$ ./configure --prefix=/opt/tcl
-	$ make
-	$ make install
+Currently not supported.
 
 WINDOWS BUILD
 =============
 
-See the tcl/win/README file included in the Tcl src dist for details
-about how to build the extension under Windows. We suggest using
-the Msys + Mingw build process since it is significantly easier
-than building with VC++ or Cygwin.
-
-This package includes a Visual Studio project file to help in building
-with VC++.
-
-The package has been built using both VC++6 and Msys + Mingw. 
-
-Microsoft Platform SDK 2003 is required for building. The following minimal
-example will install the extension in the C:\Tcl\lib directory.
-
-	$ cd tcludp/win
-	$ nmake -f makefile.vc realclean all 
-	$ nmake -f makefile.vc install INSTALLDIR=C:\Tcl\lib
-
-DOCUMENTATION BUILD
-===================
-
-Use the following command to create the UNIX documentation (based on udp.man file):
-
-	$ cd tcludp
-	$ ./tools/mpexpand.tcl nroff ./doc/udp.man ./doc/udp.n
-	$ nroff -man ./doc/udp.n
+You can use VSCodium with following extensions: C/C++ Themes, Makefile Tools and
+Native Debug. In Addition, you Need MSys2 for Building, it should be installed
+to C:\tools\msys64. Use MSys2 command pacman to install the build Tools you need
+for your favourite tcl Shell, mingw32 for 32-bit Architecture or mingw64 for
+64-bit Architecture (only Intel / AMD, no ARM).
+With VSCodium, open Folder generic and use the Terminal menu to run one of the
+"Kake Target"-Tasks.
+With MSys2 only, build the 32-bit dll from Mingw32 terminal and the 64-bit Version
+from Mingw64 terminal. Set Environment variable TargetType=Release (to allow 
+Debugging, set TargetType=Debug). In addition, set TargetMachine=X86 in Mingw32
+terminal or TargetMachine=X64 in Mingw64 terminal. Afterwards, run make to build
+the target dll.
 
 FEEDBACK
 ========
 
-If you have any problem with this extension, please contact Xiaotao Wu
+If you have any problem with this Extension, please contact me via github:
 
-Name  : Xiaotao Wu
-Email : xiaotaow@cs.columbia.edu, xw71@columbia.edu
-URL   : http://www.cs.columbia.edu/~xiaotaow
-Phone : (212)939-7020, (212)939-7133,  Fax: (801)751-0217
-SIP   : sip:xiaotaow@conductor.cs.columbia.edu
+URL   : https://github.com/mjpcger/tcludp
