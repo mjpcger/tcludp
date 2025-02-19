@@ -11,7 +11,7 @@ Depending on the Architecture of the tcl shell you want to use, copy
 either the dll from Folder Release32 (for 32-bit shell) or Folder Release64
 (for 64-bit shell) to the Folder of your tcl scripts. Load the Extension
 with
-	load [glob udp*.dll]
+	load [glob udp*$tcl_platform(pointerSize).dll]
 
 
 UNIX BUILD
@@ -25,13 +25,17 @@ WINDOWS BUILD
 You can use VSCodium with following extensions: C/C++ Themes, Makefile Tools and
 Native Debug. In Addition, you Need MSys2 for Building, it should be installed
 to C:\tools\msys64. Use MSys2 command pacman to install the build Tools you need
-for your favourite tcl Shell, mingw32 for 32-bit Architecture or mingw64 for
-64-bit Architecture (only Intel / AMD, no ARM).
-With VSCodium, open Folder generic and use the Terminal menu to run one of the
-"Kake Target"-Tasks.
-With MSys2 only, build the 32-bit dll from Mingw32 terminal and the 64-bit Version
+for your favorite tcl shell, mingw32 for 32-bit architecture or mingw64 for
+64-bit architecture (only Intel / AMD, no ARM). Furthermore, you need the tcl
+header files which should be distributed with every tcl version. Copy the whole
+include folder to folder generic or create a link to the tcl include folder in
+folder generic.
+
+With VSCodium, open folder generic and use menu Terminal to run one of the
+"Make Target" tasks.
+With MSys2 only, build the 32-bit dll from Mingw32 terminal and the 64-bit version
 from Mingw64 terminal. Set Environment variable TargetType=Release (to allow 
-Debugging, set TargetType=Debug). In addition, set TargetMachine=X86 in Mingw32
+debugging, set TargetType=Debug). In addition, set TargetMachine=X86 in Mingw32
 terminal or TargetMachine=X64 in Mingw64 terminal. Afterwards, run make to build
 the target dll.
 
