@@ -99,16 +99,16 @@ typedef struct UdpState {
   PacketList        *packets;
   PacketList        *packetsTail;
   int               packetNum;
-  struct UdpState   *next;
   Tcl_ThreadId      threadId;        /* for Tcl_ThreadAlert */
 #endif
+  struct UdpState   *next;
+  struct UdpState   *previous;
   short				ss_family;		 /* indicator set for ipv4 or ipv6 usage */
   int               multicast;       /* indicator set for multicast add */
   Tcl_Obj          *groupsObj;       /* list of the mcast groups */
 } UdpState;
 
-
 EXTERN int Udp_Init(Tcl_Interp *interp);
-EXTERN int Udp_SafeInit(Tcl_Interp *interp);
+EXTERN int Udp_Unload(Tcl_Interp *interp, int flag);
 
 #endif

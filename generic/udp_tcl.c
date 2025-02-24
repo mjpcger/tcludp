@@ -94,6 +94,7 @@ static char errBuf[256];
 static Tcl_DriverOutputProc    udpOutput;
 static Tcl_DriverInputProc     udpInput;
 static Tcl_DriverCloseProc     udpClose;
+static Tcl_DriverClose2Proc    udpClose2;
 static Tcl_DriverWatchProc     udpWatch;
 static Tcl_DriverGetHandleProc udpGetHandle;
 static Tcl_DriverSetOptionProc udpSetOption;
@@ -142,16 +143,17 @@ int  Udp_WinHasSockets(Tcl_Interp *interp);
 static HANDLE waitForSock;
 static HANDLE waitSockRead;
 static HANDLE sockListLock;
-static UdpState *sockList;
 
 #endif /* ! WIN32 */
+
+static UdpState *sockList;
 
 /*
  * This structure describes the channel type for accessing UDP.
  */
 static Tcl_ChannelType Udp_ChannelType = {
     "udp",                 /* Type name.                                    */
-    NULL,                  /* Set blocking/nonblocking behaviour. NULL'able */
+    TCL_CHANNEL_VERSION_5, /* Set version type                              */
     udpClose,              /* Close channel, clean instance data            */
     udpInput,              /* Handle read request                           */
     udpOutput,             /* Handle write request                          */
@@ -160,7 +162,10 @@ static Tcl_ChannelType Udp_ChannelType = {
     udpGetOption,          /* Get options.                        NULL'able */
     udpWatch,              /* Initialize notifier                           */
     udpGetHandle,          /* Get OS handle from the channel.               */
+	udpClose2,			   /* Close channel in / out                        */
 };
+
+const TclStubs *tclStubsPtr = NULL; 
 
 /*
  * ----------------------------------------------------------------------
@@ -170,38 +175,72 @@ static Tcl_ChannelType Udp_ChannelType = {
 int
 Udp_Init(Tcl_Interp *interp)
 {
-    int r = TCL_OK;
 #if defined(DEBUG) && !defined(WIN32)
     dbg = fopen("udp.dbg", "wt");
 #endif
 
 #ifdef USE_TCL_STUBS
-    Tcl_InitStubs(interp, "8.1", 0);
+	struct HeadOfInterp {
+		Tcl_Interp interpWithStubTable;
+		TclStubs *stubTable;
+	} *hoi = (struct HeadOfInterp*) interp;
+	const char *ver;
+	if (hoi->stubTable == NULL || hoi->stubTable->magic != TCL_STUB_MAGIC) {
+		Tcl_SetResult(interp, "This extension requires Tcl stubs support.", TCL_STATIC);
+		return TCL_ERROR;
+	}
+	tclStubsPtr = hoi->stubTable;
 #endif
 
 #ifdef WIN32
     if (Udp_WinHasSockets(interp) != TCL_OK) {
+		tclStubsPtr = NULL;
         return TCL_ERROR;
     }
-    Tcl_CreateEventSource(UDP_SetupProc, UDP_CheckProc, NULL);
+#else
+    sockList = NULL;
 #endif
+	Tcl_Obj *tclRequirements[2];
+	tclRequirements[0] = Tcl_NewStringObj("8.4", -1);
+	tclRequirements[1] = Tcl_NewStringObj("9.0", -1);
+	int result;
 
-    Tcl_CreateCommand(interp, "udp_open", udpOpen , 
-                      (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateCommand(interp, "udp_conf", udpConf , 
-                      (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
-    Tcl_CreateCommand(interp, "udp_peek", udpPeek , 
-                      (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
-    
-    r = Tcl_PkgProvide(interp, PACKAGE_NAME, PACKAGE_VERSION);
-    return r;
+	if ((result = Tcl_PkgRequireProc(interp, "Tcl", 2, tclRequirements, NULL)) == TCL_OK) {
+#ifdef WIN32
+		Tcl_CreateEventSource(UDP_SetupProc, UDP_CheckProc, NULL);
+#endif
+	
+		Tcl_CreateCommand(interp, "udp_open", udpOpen , 
+						(ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+		Tcl_CreateCommand(interp, "udp_conf", udpConf , 
+						(ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+    	Tcl_CreateCommand(interp, "udp_peek", udpPeek , 
+                        (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
+		if (TCL_ERROR == Tcl_PkgProvide(interp, PACKAGE_NAME, PACKAGE_VERSION)) {
+			tclStubsPtr = NULL;
+			return TCL_ERROR;
+		}
+		
+		return TCL_OK;
+	}
+	return TCL_ERROR;
 }
 
 int
-Udp_SafeInit(Tcl_Interp *interp)
+Udp_Unload(Tcl_Interp *interp, int flag)
 {
-    Tcl_SetResult(interp, "permission denied", TCL_STATIC);
-    return TCL_ERROR;
+	if (sockList != NULL) {
+		return TCL_ERROR;
+	}
+    Tcl_DeleteCommand(interp, "udp_open");
+    Tcl_DeleteCommand(interp, "udp_conf");
+    Tcl_DeleteCommand(interp, "udp_peek");
+#ifdef WIN32
+	Tcl_DeleteEventSource(UDP_SetupProc, UDP_CheckProc, NULL);
+#endif
+	while (sockList != NULL)
+		udpClose(sockList, interp);
+    return TCL_OK;
 }
 
 /*
@@ -387,17 +426,22 @@ udpOpen(ClientData clientData, Tcl_Interp *interp,
 #ifdef WIN32
     statePtr->threadId = Tcl_GetCurrentThread();    
     statePtr->packetNum = 0;
-    statePtr->next = NULL;
     statePtr->packets = NULL;
     statePtr->packetsTail = NULL;
 #endif
+    statePtr->next = statePtr->previous = NULL;
     /* Tcl_SetChannelOption(interp, statePtr->channel, "-blocking", "0"); */
     Tcl_AppendResult(interp, channelName, (char *)NULL);
 #ifdef WIN32
     WaitForSingleObject(sockListLock, INFINITE);
+#endif
     statePtr->next = sockList;
+	if (sockList != NULL) {
+		statePtr->previous = sockList->previous;
+		sockList->previous = statePtr;
+	}		
     sockList = statePtr;
-
+#ifdef WIN32
     UDPTRACE("Added %d to sockList\n", statePtr->sock);
     SetEvent(sockListLock);
     SetEvent(waitForSock);
@@ -591,14 +635,12 @@ UDP_CheckProc(ClientData data, int flags)
     char *message;
     struct sockaddr_storage recvaddr;
     PacketList *p;
-#ifdef WIN32
 	char hostaddr[256];
 	char* portaddr;
 	char remoteaddr[256];
   	int remoteaddrlen = sizeof(remoteaddr);
 	memset(hostaddr, 0 , sizeof(hostaddr));
 	memset(remoteaddr,0,sizeof(remoteaddr));
-#endif /*  WIN32 */
 	
     /* UDPTRACE("checkProc\n"); */
     
@@ -630,18 +672,19 @@ UDP_CheckProc(ClientData data, int flags)
                 p = (PacketList *)ckalloc(sizeof(struct PacketList));
                 p->message = message;
                 p->actual_size = actual_size;
-#ifdef WIN32
 				/* 
 				 * In windows, do not use getnameinfo() since this function does
 				 * not work correctly in case of multithreaded. Also inet_ntop() is
 				 * not available in older windows versions.
 				 */
+				DWORD remlen = remoteaddrlen; 
 				if (WSAAddressToString((struct sockaddr *)&recvaddr,socksize,
-					NULL,remoteaddr,&remoteaddrlen)==0) {
+					NULL,remoteaddr,&remlen)==0) {
 					/* 
 					 * We now have an address in the format of <ip address>:<port> 
 					 * Search backwards for the last ':'
 					 */
+					 remoteaddrlen = (int)remlen;
 					portaddr = strrchr(remoteaddr,':') + 1;
 					strncpy(hostaddr,remoteaddr,strlen(remoteaddr)-strlen(portaddr)-1);
 					statePtr->peerport = atoi(portaddr);
@@ -649,19 +692,6 @@ UDP_CheckProc(ClientData data, int flags)
 					strcpy(statePtr->peerhost,hostaddr);
 					strcpy(p->r_host,hostaddr);
 				}
-#else
-				if (statePtr->ss_family == AF_INET ) {
-					inet_ntop(AF_INET, ((struct sockaddr_in*)&recvaddr)->sin_addr, statePtr->peerhost, sizeof(statePtr->peerhost) );
-					inet_ntop(AF_INET, ((struct sockaddr_in*)&recvaddr)->sin_addr, p->r_host, sizeof(p->r_host) );
-	               	p->r_port = ntohs(((struct sockaddr_in*)&recvaddr)->sin_port);
-                	statePtr->peerport = ntohs(((struct sockaddr_in*)&recvaddr)->sin_port);                					
-				} else {					
-					inet_ntop(AF_INET6, ((struct sockaddr_in6*)&recvaddr)->sin6_addr, statePtr->peerhost, sizeof(statePtr->peerhost) );
-					inet_ntop(AF_INET6, ((struct sockaddr_in6*)&recvaddr)->sin6_addr, p->r_host, sizeof(p->r_host) );
-  				    p->r_port = ntohs(((struct sockaddr_in6*)&recvaddr)->sin6_port);
-				    statePtr->peerport = ntohs(((struct sockaddr_in6*)&recvaddr)->sin6_port);
-				}
-#endif /*  WIN32 */
 
                 p->next = NULL;
                  
@@ -862,6 +892,26 @@ Udp_WinHasSockets(Tcl_Interp *interp)
 
 /*
  * ----------------------------------------------------------------------
+ * udpClose2 --
+ *  Called from the channel driver code to cleanup and close
+ *  the socket.
+ *
+ * Results:
+ *  0 if successful, the value of errno if failed.
+ *
+ * Side effects:
+ *  The socket is closed.
+ *
+ * ----------------------------------------------------------------------
+ */
+static int udpClose2(ClientData instanceData, Tcl_Interp *interp, int flags)
+{
+	if (flags == 0)
+		return udpClose(instanceData, interp);
+	return EINVAL;
+}
+/*
+ * ----------------------------------------------------------------------
  * udpClose --
  *  Called from the channel driver code to cleanup and close
  *  the socket.
@@ -877,34 +927,21 @@ Udp_WinHasSockets(Tcl_Interp *interp)
 static int 
 udpClose(ClientData instanceData, Tcl_Interp *interp)
 {
-    int sock;
     int errorCode = 0;
     int objc;
     Tcl_Obj **objv;
     UdpState *statePtr = (UdpState *) instanceData;
-#ifdef WIN32
-    UdpState *tmp, *p;
+    int sock = statePtr->sock;
     
+#ifdef WIN32
     WaitForSingleObject(sockListLock, INFINITE);
 #endif /* ! WIN32 */
     
-    sock = statePtr->sock;
-	
-#ifdef WIN32
-	
-    /* remove the statePtr from the list */
-    for (tmp = p = sockList; p != NULL; tmp = p, p = p->next) {
-		if (p->sock == sock) {
-            UDPTRACE("Remove %d from the list\n", p->sock);
-			if (p == sockList) {
-				sockList = sockList->next;
-			} else {
-				tmp->next = p->next;
-			}
-		}
-    }
-	
-#endif /* ! WIN32 */
+    UDPTRACE("Remove %d from the list\n", statePtr->sock);
+	if (statePtr->next != NULL)
+		statePtr->next->previous = statePtr->previous;
+	*(sockList == statePtr ? &sockList : &statePtr->previous) = statePtr->next;
+	statePtr->next = statePtr->previous = NULL;
 	
     /*
 	* If there are multicast groups added they should be dropped.
@@ -933,12 +970,12 @@ udpClose(ClientData instanceData, Tcl_Interp *interp)
     if (closesocket(sock) < 0) {
         errorCode = errno;
     }
-    ckfree((char *) statePtr);
+	ckfree((char *) statePtr);
     if (errorCode != 0) {
 #ifndef WIN32
         sprintf(errBuf, "udp_close: %d, error: %d\n", sock, errorCode);
 #else
-        sprintf(errBuf, "udp_cose: %d, error: %d\n", sock, WSAGetLastError());
+        sprintf(errBuf, "udp_close: %d, error: %d\n", sock, WSAGetLastError());
 #endif
         UDPTRACE("UDP error - close %d", sock);
     } else {
@@ -1078,7 +1115,7 @@ udpInput(ClientData instanceData, char *buf, int bufSize, int *errorCode)
     int bytesRead;
 
 #ifdef WIN32
-    PacketList *packets;
+    PacketList *packets;    
 #else /* ! WIN32 */
     socklen_t socksize;
     int buffer_size = MAXBUFFERSIZE;
@@ -1186,7 +1223,7 @@ LSearch(Tcl_Obj *listObj, const char *group)
     }
     return -1;
 }
-
+
 /*
  * ----------------------------------------------------------------------
  *
@@ -1364,7 +1401,7 @@ UdpMulticast(UdpState *statePtr, Tcl_Interp *interp,
         Tcl_SetObjResult(interp, statePtr->groupsObj);
     return TCL_OK;
 }
-
+
 /*
 * ----------------------------------------------------------------------
 * udpGetOption --
