@@ -1,0 +1,86 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "Make Targets (Debug / X64)",
+            "command": "mingw32-make",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "ActualTclPath": "<path/to/64-bit/tcl/Version/9.0/Folder>",
+                    "TargetType": "Debug",
+                    "TargetMachine": "X64",
+                    "PATH": "C:/WINDOWS/system32;C:/WINDOWS;<path/to/MSys>/mingw64/bin;<path/to/MSys>/usr/bin"
+                },
+                "group": {
+                    "kind": "build",
+                    "isDefault": false
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Make Targets (Release / X64)",
+            "command": "mingw32-make",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "ActualTclPath": "<path/to/64-bit/tcl/Version/9.0/Folder>",
+                    "TargetType": "Release",
+                    "TargetMachine": "X64",
+                    "PATH": "C:/WINDOWS/system32;C:/WINDOWS;<path/to/MSys>/mingw64/bin;<path/to/MSys>/usr/bin"
+                },
+                "group": {
+                    "kind": "build",
+                    "isDefault": false
+                }
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "type": "shell",
+            "label": "Make Targets (Debug / X86)",
+            "command": "mingw32-make",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "ActualTclPath": "<path/to/32-bit/tcl/Version/9.0/Folder>",
+                    "TargetType": "Debug",
+                    "TargetMachine": "X86",
+                    "PATH": "C:/WINDOWS/system32;C:/WINDOWS;<path/to/MSys>/mingw32/bin;<path/to/MSys>/usr/bin"
+                },
+                "group": {
+                    "kind": "build",
+                    "isDefault": false
+                }
+            },
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "type": "shell",
+            "label": "Make Targets (Release / X86)",
+            "command": "mingw32-make",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "ActualTclPath": "<path/to/32-bit/tcl/Version/9.0/Folder>",
+                    "TargetType": "Release",
+                    "TargetMachine": "X86",
+                    "PATH": "C:/WINDOWS/system32;C:/WINDOWS;<path/to/MSys>/mingw32/bin;<path/to/MSys>/usr/bin"
+                },
+                "group": {
+                    "kind": "build",
+                    "isDefault": false
+                }
+            },
+            "problemMatcher": []
+        }
+    ]
+}

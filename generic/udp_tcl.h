@@ -7,7 +7,7 @@
  *
  * Written by Xiaotao Wu
  * 
- * $Id$
+ * $Id: udp_tcl.h,v 1.13 2014/05/02 14:41:24 huubeikens Exp $
  *----------------------------------------------------------------------
  */
 
@@ -61,6 +61,15 @@
 #include <sys/types.h>
 #include "tcl.h"
 
+#ifndef TCL_SIZE_MAX
+# define Tcl_GetSizeIntFromObj Tcl_GetIntFromObj
+# define TCL_SIZE_MAX      INT_MAX
+# define TCL_SIZE_MODIFIER ""
+# ifndef Tcl_Size
+typedef int Tcl_Size;
+# endif
+#endif
+
 #ifdef BUILD_udp
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLEXPORT
@@ -87,7 +96,11 @@ typedef struct PacketList {
 
 typedef struct UdpState {
   Tcl_Channel       channel;
+#ifdef _WIN32
+  SOCKET            sock;
+#else
   int               sock;
+#endif
   char              remotehost[256]; /* send packets to */
   uint16_t          remoteport;
   char              peerhost[256];   /* receive packets from */
@@ -106,6 +119,13 @@ typedef struct UdpState {
   int               multicast;       /* indicator set for multicast add */
   Tcl_Obj          *groupsObj;       /* list of the mcast groups */
 } UdpState;
+
+
+#if defined(WIN32) && defined(_M_AMD64)
+# define SOCKET_PRINTF_FMT "%I64u"
+#else
+# define SOCKET_PRINTF_FMT "%d"
+#endif
 
 
 EXTERN int Udp_Init(Tcl_Interp *interp);
