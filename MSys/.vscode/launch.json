@@ -8,41 +8,41 @@
             "name": "Debug64",
             "type": "gdb",
             "request": "launch",
-            "target": "C:/Program Files/Tcl/bin/wish.exe",
+            "target": "<path/to/64-bit/Tcl/Tk-application/version/9.x>",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText",
             "arguments": "test.tcl",
-            "gdbpath": "c:/tools/msys64/mingw64/bin/gdb"
+            "gdbpath": "<path/to/MSys>/mingw64/bin/gdb"
         },
         {
             "name": "Debug64-8",
             "type": "gdb",
             "request": "launch",
-            "target": "D:/Setup/Tools+Driver/Tcl-Tk/Freewrap/tclkit-gui-8_6_10-twapi-4_4_1-x64-max.exe",
+            "target": "<path/to/64-bit/Tcl/Tk-application/version/8.x>",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText",
             "arguments": "test.tcl",
-            "gdbpath": "c:/tools/msys64/mingw64/bin/gdb"
+            "gdbpath": "<path/to/MSys>/mingw64/bin/gdb"
         },
         {
             "name": "Debug32",
             "type": "gdb",
             "request": "launch",
-            "target": "C:/Program Files (x86)/Tcl/bin/wish.exe",
+            "target": "<path/to/32-bit/Tcl/Tk-application/version/9.x>",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText",
             "arguments": "test.tcl",
-            "gdbpath": "c:/tools/msys64/mingw32/bin/gdb"
+            "gdbpath": "<path/to/MSys>/mingw32/bin/gdb"
         },
         {
             "name": "Debug32-8",
             "type": "gdb",
             "request": "launch",
-            "target": "D:/Setup/Tools+Driver/Tcl-Tk/Freewrap/tclkit-gui-8_6_5-twapi-4_1_27-x86-max.exe",
+            "target": "<path/to/32-bit/Tcl/Tk-application/version/8.x>",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText",
             "arguments": "test.tcl",
-            "gdbpath": "c:/tools/msys64/mingw32/bin/gdb"
+            "gdbpath": "<path/to/MSys>/mingw32/bin/gdb"
         }
     ]
 }
