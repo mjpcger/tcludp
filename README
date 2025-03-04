@@ -18,36 +18,50 @@ UNIX BUILD
 
 Building under most UNIX systems is easy, just run the configure script
 and then run make. For more information about the build process, see
-the tcl/unix/README file in the Tcl src dist. The following minimal
-example will install the extension in the /opt/tcl directory.
+the tcl/unix/README file in the Tcl src dist. 
 
-The tcl development package is required for building. 
-(e.g. use 'apt-get|yum install tcl-devel.<platform>'
+Following examples use the tclConfig.sh script. This script comes with the
+installation of Tcl and contains useful data about the installation.
+
+Linux
+-----
+
+To install Tcl, use e.g. 'apt-get|yum install tcl-devel.<platform> tcllib'.
+The tclConfig.sh script is located in the folder /usr/lib/
 
 	$ cd tcludp
-	$ ./configure --prefix=/opt/tcl
+	$ ./configure --with-tcl=/usr/lib/
 	$ make
+	$ make test
+	$ make install
+
+MacOSX
+------
+To install Tcl, use e.g. ActiveState Tcl distribution. The tclConfig.sh script
+is located in the folder /Library/Frameworks/Tcl.framework/
+
+	$ cd tcludp
+	$ ./configure --with-tcl=/Library/Frameworks/Tcl.framework/
+	$ make
+	$ make test
 	$ make install
 
 WINDOWS BUILD
 =============
 
 See the tcl/win/README file included in the Tcl src dist for details
-about how to build the extension under Windows. We suggest using
-the Msys + Mingw build process since it is significantly easier
-than building with VC++ or Cygwin.
+about how to build the extension under Windows.
 
-This package includes a Visual Studio project file to help in building
-with VC++.
-
-The package has been built using both VC++6 and Msys + Mingw. 
-
-Microsoft Platform SDK 2003 is required for building. The following minimal
-example will install the extension in the C:\Tcl\lib directory.
+The following minimal example will build and install the extension in the
+C:\Tcl\lib directory.
 
 	$ cd tcludp/win
 	$ nmake -f makefile.vc realclean all 
-	$ nmake -f makefile.vc install INSTALLDIR=C:\Tcl\lib
+	$ nmake -f makefile.vc install INSTALLDIR=C:\Tcl
+
+The Visual Studio project file included in the win directory
+is *ancient* and deprecated. It is not suitable for modern versions
+of Tcl and Visual Studio.
 
 DOCUMENTATION BUILD
 ===================
