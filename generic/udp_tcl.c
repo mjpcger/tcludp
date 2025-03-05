@@ -147,11 +147,16 @@ Udp_Init(Tcl_Interp *interp)
 #endif
 
 #ifdef USE_TCL_STUBS
-    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
-        if (Tcl_InitStubs(interp, "8.4", 0) == NULL)
-            return TCL_ERROR;
-        Tcl_ResetResult(interp);
-    }
+# ifdef _M_AMD64
+#  if TCL_MAJOR_VERSION == 9
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL)
+#  else /* Version 8: Keep im mind new channel interface since 8.4 */  
+    if (Tcl_InitStubs(interp, "8.4", 0) == NULL)
+#  endif
+# else /* !_M_AMD64: 32 bit version */
+    if (Tcl_InitStubs(interp, "8.4", 0) == NULL && Tcl_InitStubs(interp, "9.0", 0) == NULL)
+# endif
+        return TCL_ERROR;
 #endif
 
 #ifdef WIN32

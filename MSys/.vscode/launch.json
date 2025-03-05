@@ -5,44 +5,44 @@
     "version": "1.0.0",
     "configurations": [
         {
-            "name": "Debug64",
+            "name": "Tcl9-64",
             "type": "gdb",
             "request": "launch",
-            "target": "<path/to/64-bit/Tcl/Tk-application/version/9.x>",
+            "target": "<Path/to/64-bit/Tcl/Tk/Application/Version/9.x>",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText",
             "arguments": "test.tcl",
-            "gdbpath": "<path/to/MSys>/mingw64/bin/gdb"
+            "gdbpath": "<Path/To/MSys2>/mingw64/bin/gdb"
         },
         {
-            "name": "Debug64-8",
+            "name": "Tcl8-64",
             "type": "gdb",
             "request": "launch",
-            "target": "<path/to/64-bit/Tcl/Tk-application/version/8.x>",
+            "target": "<Path/to/64-bit/Tcl/Tk/Application/Version/8.x>",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText",
             "arguments": "test.tcl",
-            "gdbpath": "<path/to/MSys>/mingw64/bin/gdb"
+            "gdbpath": "<Path/To/MSys2>/mingw64/bin/gdb"
         },
         {
-            "name": "Debug32",
+            "name": "Tcl9-32",
             "type": "gdb",
             "request": "launch",
-            "target": "<path/to/32-bit/Tcl/Tk-application/version/9.x>",
+            "target": "<Path/to/32-bit/Tcl/Tk/Application/Version/9.x>",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText",
             "arguments": "test.tcl",
-            "gdbpath": "<path/to/MSys>/mingw32/bin/gdb"
+            "gdbpath": "<Path/To/MSys2>/mingw32/bin/gdb"
         },
         {
-            "name": "Debug32-8",
+            "name": "Tcl8-32",
             "type": "gdb",
             "request": "launch",
-            "target": "<path/to/32-bit/Tcl/Tk-application/version/8.x>",
+            "target": "<Path/to/32-bit/Tcl/Tk/Application/Version/8.x>",
             "cwd": "${workspaceRoot}",
             "valuesFormatting": "parseText",
             "arguments": "test.tcl",
-            "gdbpath": "<path/to/MSys>/mingw32/bin/gdb"
+            "gdbpath": "<Path/To/MSys2>/mingw32/bin/gdb"
         }
     ]
 }

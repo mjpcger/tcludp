@@ -1,33 +1,29 @@
+# Comment out -ggdb to create release versions
+# Comment -ggdb to create debug versions
+
 CommonFlags = -DUSE_TCL_STUBS -DBUILD_udp \
-	-DTCL_MAJOR_VERSION=8 \
 	-DPACKAGE_NAME=\"udp\" -DPACKAGE_VERSION=\"1.1\" \
-	-I$(ActualTclPath)/include
+	-I$(ActualTclPath)/include \
+	-ggdb
 
-ifeq ($(TargetType)$(TargetMachine),DebugX64)
-	TargetDir = Debug8
+ifeq ($(TargetType)$(TargetMachine),Tcl8X64)
+	TargetDir = Tcl8-64
 	Target = udp110.dll
-	CFlags = -m64 -ggdb $(CommonFlags) -D_M_AMD64
+	CFlags = -m64 $(CommonFlags) -D_M_AMD64 -DTCL_MAJOR_VERSION=8 
 	cpp = gcc
 endif
 
-ifeq ($(TargetType)$(TargetMachine),ReleaseX64)
-	TargetDir = Release8
+ifeq ($(TargetType)$(TargetMachine),Tcl9X64)
+	TargetDir = Tcl9-64
 	Target = udp110.dll
-	CFlags = -m64 -Os $(CommonFlags) -D_M_AMD64
+	CFlags = -m64 $(CommonFlags) -D_M_AMD64
 	cpp = gcc
 endif
 
-ifeq ($(TargetType)$(TargetMachine),DebugX86)
-	TargetDir = Debug4
+ifeq ($(TargetType)$(TargetMachine),TclX86)
+	TargetDir = Tcl-32
 	Target = udp110.dll
-	CFlags = -m32 -ggdb  $(CommonFlags)
-	cpp = gcc
-endif
-
-ifeq ($(TargetType)$(TargetMachine),ReleaseX86)
-	TargetDir = Release4
-	Target = udp110.dll
-	CFlags = -m32 -Os  $(CommonFlags)
+	CFlags = -m32 $(CommonFlags) -DTCL_MAJOR_VERSION=8 
 	cpp = gcc
 endif
 
@@ -36,8 +32,6 @@ All : $(TargetDir) $(TargetDir)/$(Target)
 $(TargetDir) :
 	mkdir $(TargetDir)
 	
-$(TargetDir)/$(Target) : ../generic/udp_tcl.c ../generic/udp_tcl.h stubstub$(TargetMachine).o
-	$(cpp) $(CFlags) -flto -shared -o $@ ../generic/udp_tcl.c stubstub$(TargetMachine).o -lws2_32
-
-stubstub$(TargetMachine).o : stubstub.c
-	$(cpp) -c $(CFlags) -o $@ $<
+$(TargetDir)/$(Target) : ../generic/udp_tcl.c ../generic/udp_tcl.h
+	$(cpp) $(CFlags) -flto -shared -o $@ ../generic/udp_tcl.c \
+	$(ActualTclPath)/lib/libtclstub.a -lws2_32
